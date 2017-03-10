@@ -1,7 +1,7 @@
 function process_frames(datafolder, outputfolder)
 %% Read a frame and extract the corners of the square
-D = dir([datafolder,'/*.jpg']); %change '/' to '\' for windows 
-numOfFrames = length(D);
+D = dir([datafolder,'\*.jpg']); %change '/' to '\' for windows 
+%numOfFrames = length(D);
 fullfilename = fullfile(datafolder,D(1).name);
 im = imread(fullfilename);
 im_gray = rgb2gray(im);
@@ -48,9 +48,7 @@ plot(upright_corners(2,1),upright_corners(2,2),'go','MarkerSize',10, 'MarkerFace
 plot(upright_corners(3,1),upright_corners(3,2),'bo','MarkerSize',10, 'MarkerFaceColor','b')
 plot(upright_corners(4,1),upright_corners(4,2),'yo','MarkerSize',10, 'MarkerFaceColor','y')
 %% Emboss the marker-id on the top of th image: Sai
-imshow(im);
-hold on
-text2str= [num2str(tag_id)]
+text2str = num2str(tag_id);
 X=(upright_corners(1,1)+upright_corners(3,1))/2; %red1 blue1
 Y=(upright_corners(1,2)+upright_corners(3,2))/2;
 text(X,Y,text2str,'Color','red','FontSize',20)
@@ -67,14 +65,14 @@ outputVideo = VideoWriter(fullfile(outputfolder,'homography.mp4'),'MPEG-4');
 outputVideo.FrameRate = 30;
 open(outputVideo)
 %% Start processing each frame
-im_template = imread('Input/Lena.png');
+im_template = imread('Input\Lena.png');
 template_y = size(im_template,1);
 template_x = size(im_template,2);
 %Padding of 5 pixels to avoid numerical errors
 template_corners = [5 5; (template_x-5) 5;(template_x-5) (template_y-5);5 (template_y-5)];
-for i = 1:500
+for i = 1:150
     filename = sprintf('Frame %d.jpg', i);
-    fullfilename = fullfile(datafolder,filename)
+    fullfilename = fullfile(datafolder,filename);
     if(~exist(fullfilename,'file'))
        continue;
     end
@@ -145,9 +143,7 @@ for i = 1:500
     plot(upright_corners(3,1),upright_corners(3,2),'bo','MarkerSize',10, 'MarkerFaceColor','b')
     plot(upright_corners(4,1),upright_corners(4,2),'yo','MarkerSize',10, 'MarkerFaceColor','y')
     %% Emboss the Id on the top of the image, use the ID detected above: Sai
-    imshow(im);
-    hold on
-    text2str= [num2str(tag_id)]
+    text2str= num2str(tag_id);
     X=(upright_corners(1,1)+upright_corners(3,1))/2;
     Y=(upright_corners(1,2)+upright_corners(3,2))/2;
     text(X,Y,text2str,'Color','red','FontSize',25);
@@ -175,7 +171,7 @@ outputVideo.FrameRate = 30;
 open(outputVideo)
 D = dir([temp_output_folder,'/*.jpg']);
 numOfFrames = length(D);
-for k = 5:150
+for k = 2:150
     curr_file = sprintf('%d.jpg',k);
     fullfilename = fullfile(temp_output_folder,curr_file);
     if(~exist(fullfilename,'file'))

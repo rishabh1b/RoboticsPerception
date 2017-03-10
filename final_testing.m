@@ -1,4 +1,5 @@
-
+% This function is a clone of the process_frames function meant for quick
+% testing for a frame
 %% Read a frame and extract the corners of the square
 datafolder = sprintf('../Data/Tag%d', 0);
 D = dir([datafolder,'\*.jpg']);
