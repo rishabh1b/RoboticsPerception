@@ -1,6 +1,6 @@
 function process_frames(datafolder, outputfolder)
 %% Read a frame and extract the corners of the square
-D = dir([datafolder,'\*.jpg']);
+D = dir([datafolder,'/*.jpg']); %change '/' to '\' for windows 
 numOfFrames = length(D);
 fullfilename = fullfile(datafolder,D(1).name);
 im = imread(fullfilename);
@@ -30,10 +30,10 @@ end
 square = square_clock;
 %% For testing and showing the detection of corners
 % figure
-% imshow(im_gray)
+% imshow(im);
 % hold on
-% plot(square(:,1),square(:,2),'ys')
-% imtool(im_gray)
+% plot(square(:,1),square(:,2),'r o')
+% hold off
 %% Get the cleaned image and process it to get the tag_id and upright pos
 im_clean = getCleanedFrontalTagImage(square, im_gray);
 [tag_id,right_positions] = getmarkeridandpositions(im_clean);
@@ -48,6 +48,12 @@ plot(upright_corners(2,1),upright_corners(2,2),'go','MarkerSize',10, 'MarkerFace
 plot(upright_corners(3,1),upright_corners(3,2),'bo','MarkerSize',10, 'MarkerFaceColor','b')
 plot(upright_corners(4,1),upright_corners(4,2),'yo','MarkerSize',10, 'MarkerFaceColor','y')
 %% Emboss the marker-id on the top of th image: Sai
+imshow(im);
+hold on
+text2str= [num2str(tag_id)]
+X=(upright_corners(1,1)+upright_corners(3,1))/2; %red1 blue1
+Y=(upright_corners(1,2)+upright_corners(3,2))/2;
+text(X,Y,text2str,'Color','red','FontSize',20)
 
 %% Save the Current Image in the figure
 hgexport(gcf, fullfile(outputfolder, 'detected.jpg'), hgexport('factorystyle'), 'Format', 'jpeg');
@@ -61,14 +67,17 @@ outputVideo = VideoWriter(fullfile(outputfolder,'homography.mp4'),'MPEG-4');
 outputVideo.FrameRate = 30;
 open(outputVideo)
 %% Start processing each frame
-im_template = imread('..\Input\Lena.png');
+im_template = imread('Input/Lena.png');
 template_y = size(im_template,1);
 template_x = size(im_template,2);
 %Padding of 5 pixels to avoid numerical errors
 template_corners = [5 5; (template_x-5) 5;(template_x-5) (template_y-5);5 (template_y-5)];
-for i = 1:500   
+for i = 1:500
     filename = sprintf('Frame %d.jpg', i);
-    fullfilename = fullfile(datafolder,filename);
+    fullfilename = fullfile(datafolder,filename)
+    if(~exist(fullfilename,'file'))
+       continue;
+    end
     im = imread(fullfilename);
     im_gray = rgb2gray(im);
     image_size = size(im_gray);
@@ -119,9 +128,7 @@ for i = 1:500
         curr_plane(ind_video_im) = curr_temp(ind_warped_points);
         template_proj_im(:,:,color) = curr_plane;
     end
-    %For testing the projected Lena Image
-%    filename_lena = sprintf('../Output/test_lena_projection_process_frame_3_tag0/template_proj_im%d.jpg',i);
-%    imwrite(template_proj_im,filename_lena,'jpg');
+
     writeVideo(outputVideo,template_proj_im)
    %% Plot the RGBY corners first
     im_clean = getCleanedFrontalTagImage(square, im_gray);
@@ -138,17 +145,21 @@ for i = 1:500
     plot(upright_corners(3,1),upright_corners(3,2),'bo','MarkerSize',10, 'MarkerFaceColor','b')
     plot(upright_corners(4,1),upright_corners(4,2),'yo','MarkerSize',10, 'MarkerFaceColor','y')
     %% Emboss the Id on the top of the image, use the ID detected above: Sai
-    
+    imshow(im);
+    hold on
+    text2str= [num2str(tag_id)]
+    X=(upright_corners(1,1)+upright_corners(3,1))/2;
+    Y=(upright_corners(1,2)+upright_corners(3,2))/2;
+    text(X,Y,text2str,'Color','red','FontSize',25);
     %% Draw a augmented cube
+%     K = [629.30 0   330.766
+%           0  635.53 251
+%           0   0     1];
     % Changing the camera centre in the calibration matrix gives a better
     % performance
-%     K = [629.30 0  960
-%           0  635.53 960
-%           0   0     1];
-    K =[1406.08415449821,0,0;
-    2.20679787308599, 1417.99930662800,0;
-    1014.13643417416, 566.347754321696,1]';
-
+    K = [629.30 0  960
+          0  635.53 960
+          0   0     1];
     corners_tag = [0 0; 1 0; 1 1; 0 1];
     cube_corners_w = [corners_tag, zeros(4,1);
                       corners_tag, -ones(4,1)];
@@ -162,13 +173,17 @@ close(outputVideo)
 outputVideo = VideoWriter(fullfile(outputfolder,'virtual.mp4'),'MPEG-4');
 outputVideo.FrameRate = 30;
 open(outputVideo)
-D = dir([temp_output_folder,'\*.jpg']);
+D = dir([temp_output_folder,'/*.jpg']);
 numOfFrames = length(D);
-for i = 2:numOfFrames
-    curr_file = sprintf('%d.jpg',i);
+for k = 5:150
+    curr_file = sprintf('%d.jpg',k);
     fullfilename = fullfile(temp_output_folder,curr_file);
+    if(~exist(fullfilename,'file'))
+       continue;
+    end
     im = imread(fullfilename);
     writeVideo(outputVideo,im)
 end
 close(outputVideo)
 delete(strcat(temp_output_folder, '\*.jpg'))
+end
