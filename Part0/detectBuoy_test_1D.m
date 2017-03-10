@@ -2,16 +2,15 @@
 % modelparams -> 3 x 2 matrix for the learned mu and var values for RED,
 % GREEN and YELLOW(in that order)
 %% Set the paths
-outputbwbasefilename = '../..Output/Part0/Frames/binary_';
-outputsegbasefilename = '../..Output/Part0/Frames/output_';
+%outputbwbasefilename = '../..Output/Part0/Frames/binary_';
+outputsegbasefilename = '../../Output/Part0/Frames/output_';
 testfolder = '../../Images/TestSet/Frames';
-trial_path = '../../Output/Part0/segmented';
-% D = dir([testfolder,'\*.jpg']);
-% numOfFrames = length(D);
+D = dir([testfolder,'\*.jpg']);
+numOfFrames = length(D);
 %% Get the samples
-load('Ysamples_comb.mat')
-load('Rsamples_comb.mat')
-load('Gsamples_1.mat')
+load('..\samples\Ysamples_comb.mat')
+load('..\samples\Rsamples_comb.mat')
+load('..\samples\Gsamples_1.mat')
 %% Get the model params for now
 modelparams = estimate(Rsamples_comb,1);
 mu_r = modelparams(1,1);
@@ -23,12 +22,13 @@ modelparams = estimate(Ysamples_comb,3);
 mu_y = modelparams(1,1);
 var_y = modelparams(1,2);
 window_breadth = 40;
-for frameid = 1:150
+for frameid = 1:numOfFrames
     %% Get the File handle
     filename = sprintf('Frame %d.jpg',frameid);
     fullfilename = fullfile(testfolder, filename);
     fullfilename_bw = strcat(outputbwbasefilename, filename);
     fullfilename_seg = strcat(outputsegbasefilename, filename);
+    output_filename = strcat(outputsegbasefilename, filename);
     %%
     im = imread(fullfilename);
     [m, n, ~] = size(im);
@@ -41,7 +41,6 @@ for frameid = 1:150
     %imtool(prob)
     %% Binarize and perform morphological operations
     curr_bw = prob > 0.45;
-    %curr_bw = prob > 0.5;
     %figure
     %imshow(curr_bw)
     %%
@@ -53,8 +52,6 @@ for frameid = 1:150
         bw_biggest(CC.PixelIdxList{idx}) = true; 
         struct = strel('disk', 25);
         im_close_r = imclose(bw_biggest, struct);
-        %figure,
-        %imshow(bw_biggest); hold on;
         B = bwboundaries(im_close_r);
         pixels_needed = cell2mat(B(1));
         figure(1)
@@ -82,9 +79,6 @@ for frameid = 1:150
             xunit(end+1) = xunit(1);
             yunit(end+1) = yunit(1);
             red_mask = poly2mask(xunit,yunit,size(curr_bw,1),size(curr_bw,2));
-%         else
-%             % If not lying within the image then plot just the boundary pixels 
-%             plot(pixels_needed(:,2),pixels_needed(:,1),'r', 'linewidth', 2)
         end
     else 
         no_red_buoy = true;
@@ -97,11 +91,8 @@ for frameid = 1:150
     upper_lim_r = round(centre_window(2)) + window_breadth;
     lower_lim_c = round(max([1, centre_window(1) - window_length]));
     upper_lim_c = round(min([n, centre_window(1) + window_length]));
-%     subset_r = im(lower_lim_r:upper_lim_r,:,1);
-%     subset_g = im(lower_lim_r:upper_lim_r,:,2);
     subset_r = im(lower_lim_r:upper_lim_r,lower_lim_c:upper_lim_c,1);
     subset_g = im(lower_lim_r:upper_lim_r,lower_lim_c:upper_lim_c,2);
-    %subset_b = im(lower_lim_r:upper_lim_r,:,3);
     num_elem = numel(subset_r);
     sample = (double(reshape(subset_r, [num_elem,1])) + double(reshape(subset_g, [num_elem,1]))) ./ 2;
     %% Now find the Probability for yellow
@@ -110,11 +101,9 @@ for frameid = 1:150
     prob_2D_y = zeros(m,n);
     rows = numel(lower_lim_r:upper_lim_r);
     cols = numel(lower_lim_c:upper_lim_c);
-    %prob_2D_y(lower_lim_r:upper_lim_r,:) = reshape(prob_y, [rows, n]);
     prob_2D_y(lower_lim_r:upper_lim_r,lower_lim_c:upper_lim_c) = reshape(prob_y, [rows, cols]);
     curr_bw_y = prob_2D_y > 0.3;
     % Mask out the Red buoy
-    %curr_bw_y(im_close_r == 1) = 0;
     curr_bw_y(red_mask == 1) = 0;
     %figure
     %imshow(curr_bw)
@@ -138,13 +127,6 @@ for frameid = 1:150
     if radius > radius_window && hypot((centre_window(2) - centre(2)), (centre_window(1) - centre(1))) < (radius_window + 20)
         delete(p_r);
     end
-    % figure
-    % imshow(im)
-    % hold on
-    % plot(pt1(1),pt1(2),'*')
-    % plot(pt2(1),pt2(2),'*')
-    % plot(pt3(1),pt3(2),'*')
-
     th = 0:pi/50:2*pi;
     xunit = radius * cos(th) + centre(1);
     yunit = radius * sin(th) + centre(2);
@@ -179,10 +161,10 @@ for frameid = 1:150
     numPixels = cellfun(@numel,CC.PixelIdxList);
     [green_pixels,idx] = max(numPixels);
     if green_pixels < 50
-        hgexport(gcf, fullfile(trial_path, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+        hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
         continue;
     elseif isempty(green_pixels)
-        hgexport(gcf, fullfile(trial_path, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+        hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
         continue;
     end
     bw_biggest(CC.PixelIdxList{idx}) = true; 
@@ -204,12 +186,11 @@ for frameid = 1:150
     xunit = radius * cos(th) + centre(1);
     yunit = radius * sin(th) + centre(2);
     if hypot((centre_window(2) - centre(2)), (centre_window(1) - centre(1))) < radius_window
-        hgexport(gcf, fullfile(trial_path, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+        hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
         continue;
     end
-    %imshow(im), hold on
     plot(xunit, yunit, 'linewidth', 2, 'Color','green');
     %plot(pixels_needed(:,2),pixels_needed(:,1),'g', 'linewidth', 2)
-    hgexport(gcf, fullfile(trial_path, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+    hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
 end
-
+%% Generate a video sequence

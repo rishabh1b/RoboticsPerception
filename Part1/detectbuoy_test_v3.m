@@ -1,15 +1,13 @@
 %% Set the paths
-%frameid = 20;
-outputbwbasefilename = '../..Output/Part0/Frames/binary_';
-outputsegbasefilename = '../..Output/Part1/Frames/output_';
-testfolder = '../../Images/TestSet/Frames';
-trial_output_path = '../../Output/Part1/';
-% D = dir([testfolder,'\*.jpg']);
-% numOfFrames = length(D);
+%outputbwbasefilename = '../..Output/Part0/Frames/binary_';
+outputsegbasefilename = '../../Output/Part1/Frames/output_';
+testfolder = '../../Images/TestSet/Frames/';
+D = dir([testfolder,'\*.jpg']);
+numOfFrames = length(D);
 %% Load the samples from the Training Set
-load('Rsamples_comb.mat')
-load('Ysamples_comb.mat')
-load('Gsamples_1.mat')
+load('..\samples\Rsamples_comb.mat')
+load('..\samples\Ysamples_comb.mat')
+load('..\samples\Gsamples_1.mat')
 % D = dir([testfolder,'\*.jpg']);
 % numOfFrames = length(D);
 %% Get the model params for Red, Yellow and Green
@@ -34,7 +32,7 @@ max_radius_buoy = 30; % To prevent the circular contours to not represent the co
 max_radius_green_buoy = 20;
 old_radius_window = 300;  % Inital guess, close to covering the entire image
 old_centre_window = [240, 320];
-for frameid = 1: 200
+for frameid = 1: numOfFrames
     %% Get the correct paths
     filename = sprintf('Frame %d.jpg',frameid);
     fullfilename = fullfile(testfolder, filename);
@@ -150,10 +148,10 @@ for frameid = 1: 200
     if no_red_buoy && ~no_yellow_buoy % Change the window whose breadth is centered around this yellow buoy
         centre_window = centre_y;
         radius_window = radius_y;
-%     else
-%         radius_window = 100;  % Revert to whole image
-%         centre_window = [240, 320];
-    end
+    else
+        radius_window = 300;  % Revert to whole image
+        centre_window = [240, 320];
+   end
     %% Calculate the score for Green Buoy - in the reduced window
     G_3d_norm_2d = zeros(m,n);
     G_3d = mvnpdf([R G B], mu_G, sigma_G);
@@ -176,7 +174,8 @@ for frameid = 1: 200
     else
         [centre_g, radius_g] = getCentreAndRadius(pixels_needed, true);
         %Sometimes Green Interferes with Yellow and Red. Due to lack of
-        %training images green not identified completely
+        %training images green not identified completely. HACK for now to
+        %get rid of false positives based on distance between the centres
         if ~no_yellow_buoy && ((hypot((centre_g(2) - centre_y(2)), (centre_g(1) - centre_y(1))) < radius_y + 10) || ...
                 (abs(centre_g(1) - centre_y(1)) < 10) || (abs(centre_g(1) - centre_window(1)) < 60))
             no_green_buoy = true;
@@ -199,5 +198,7 @@ for frameid = 1: 200
     if ~no_green_buoy
         plot(xunit_g, yunit_g, 'linewidth', 2, 'Color','green');
     end
-    hgexport(gcf, fullfile(trial_output_path, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+    output_filename = strcat(outputsegbasefilename, filename);
+    %hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
 end
+%% Generate a Video Sequence
