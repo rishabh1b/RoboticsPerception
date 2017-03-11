@@ -199,6 +199,9 @@ for frameid = 1: numOfFrames
         plot(xunit_g, yunit_g, 'linewidth', 2, 'Color','green');
     end
     output_filename = strcat(outputsegbasefilename, filename);
-    %hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
+    hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
 end
 %% Generate a Video Sequence
+datafolder = '..\..\Output\Part1\Frames\';
+filename = 'Part1.mp4';
+CreateVideo(datafolder, filename);

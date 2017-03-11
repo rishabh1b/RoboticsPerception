@@ -26,7 +26,7 @@ for frameid = 1:numOfFrames
     %% Get the File handle
     filename = sprintf('Frame %d.jpg',frameid);
     fullfilename = fullfile(testfolder, filename);
-    fullfilename_bw = strcat(outputbwbasefilename, filename);
+    %fullfilename_bw = strcat(outputbwbasefilename, filename);
     fullfilename_seg = strcat(outputsegbasefilename, filename);
     output_filename = strcat(outputsegbasefilename, filename);
     %%
@@ -194,3 +194,6 @@ for frameid = 1:numOfFrames
     hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
 end
 %% Generate a video sequence
+datafolder = '..\..\Output\Part0\Frames\';
+filename = 'Part0.mp4';
+CreateVideo(datafolder, filename);

@@ -193,3 +193,6 @@ for frameid = 1 : numOfFrames
     hgexport(gcf, output_filename, hgexport('factorystyle'), 'Format', 'jpeg');
 end
 %% Generate a video sequence
+datafolder = '..\..\Output\Part2\segmented\';
+filename = 'Part2.mp4';
+CreateVideo(datafolder, filename);

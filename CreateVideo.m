@@ -1,15 +1,14 @@
 %% Create Video From Frames
-function CreateVideo(datafolder)
-
+function CreateVideo(datafolder, filename)
 outputfolder=datafolder;
-outputVideo = VideoWriter(fullfile(outputfolder,'Part0.mp4'),'MPEG-4');
+outputVideo = VideoWriter(fullfile(outputfolder,filename),'MPEG-4');
 outputVideo.FrameRate = 30;
 
 open(outputVideo)
-D = dir([datafolder,'/*.jpg']);
+D = dir([datafolder,'\*.jpg']);
 numOfFrames = length(D);
 for k = 1:numOfFrames
-    curr_file = sprintf('output_Frames %d.jpg',k);
+    curr_file = sprintf('output_Frame %d.jpg',k);
     fullfilename = fullfile(datafolder,curr_file);
     if(~exist(fullfilename,'file'))
        continue;
