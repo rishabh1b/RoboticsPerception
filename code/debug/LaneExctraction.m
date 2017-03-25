@@ -1,4 +1,4 @@
-for i=400:1260
+for i=390:390
     datafolder= sprintf('Frames');
     filename = sprintf('Frame %d.jpg', i);
     fullfilename = fullfile(datafolder,filename);
@@ -20,12 +20,15 @@ for i=400:1260
 
     lane= hsvimg(:,:,3)> 0.6;
     bw1 = bwareaopen(lane,10); % adjust the pixel value based on the hough output
-    %figure(1),imshow(bw1);
-    
+    se = strel('disk',1);
+    erodedBW = imerode(lane, se);
+
     %apply canny
-    canny= edge(bw1,'canny',0.5);
+    canny= edge(erodedBW,'canny',0.5);
+    imshow(canny);
+    %%
     %sobel= edge(bw1,'sobel','horizontal');
-    %imshow(canny);
+    %imshow(erodedBW);
     %figure(2),imshow(sobel);
     
  
