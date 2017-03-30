@@ -68,6 +68,8 @@ for i = 35412:35412
     im_erode = imfill(im_erode, 'holes');
     %imshow(im_erode)
    %% Get the Bounding Box from the Region 
+   % TODO: Some hacks in a way that could track the bounding box window in 
+   % high brightness area - right now it is not tracking it efficiently
    label = bwlabel(im_erode);
    S = regionprops(logical(im_erode), 'Area', 'BoundingBox');
    allArea = [S.Area];
@@ -75,7 +77,38 @@ for i = 35412:35412
        continue;
    end
    [~,ind] = sort(allArea, 'descend'); % Picking the blob with the largest area
-   bbox = S(ind(2)).BoundingBox;
+   bbox = S(ind(1)).BoundingBox; % Will have to modify
+   %% Extract the patch corresponding to the Boundng Box
+   % This will be extended for the case where area of two bounding boxes is
+   % comparable
+   im_gray = rgb2gray(im);
+   im_roi = imcrop(im_gray, bbox);
+   im_roi = imresize(im_roi, [64,64]);
+   %% Find the sign
+   hog = vl_hog(im2single(im_roi), 4,'variant', 'dalaltriggs') ;
+   testFeatures = hog(:)';
+   predictedLabel = predict(classifier, testFeatures);
+   %% Paste the image beside the detected sign
+   if bbox(3) > size(im,2) / 2
+       rect = [(bbox(1)- bbox(3)) bbox(2) bbox(3) bbox(4)]; 
+   else
+       rect = [(bbox(1)+ bbox(3)) bbox(2) bbox(3) bbox(4)];
+   end
+   label_name = cellstr(predictedLabel);
+   label_folder = cell2mat(fullfile('..\testing\subset_testing', label_name));
+   D = dir([label_folder,'\*.ppm']);
+   fullfilename = fullfile(label_folder,D(1).name);
+   im_train = imread(fullfilename);
+   im_train = imresize(im_train,[64 64]);
+   row_1 = abs(ceil(rect(2)));
+   row_2 = row_1 + 63;
+   col_1 = ceil(rect(1));
+   col_2 = col_1 + 63;%ceil(rect(1) + rect(3));
+   for colorplane = 1 :3
+    im(row_1:row_2, col_1:col_2, colorplane) = 0.3 * im(row_1:row_2, col_1:col_2, colorplane) + ...
+        0.7 * im_train(:,:,colorplane);
+   end
+   %% Plot
    figure(2)
    imshow(im)
    hold on;
