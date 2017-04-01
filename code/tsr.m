@@ -1,16 +1,27 @@
-% Function to Segment traffic signs
+% Function to Segment and Identify traffic signs
 %% Define some threshold parameters
 min_blob_area = 600; % for considering any region worthy enough to predict a traffic sign
-max_error_score = 0.05; % for acceptable error margin in prediction
+max_error_score = 0.06; % for acceptable error margin in prediction
                         % If > than this value, we have a false positive
 blobs_to_consider = 4; % Consider this much blobs at any given frame
                        % prediction will be done for all these blobs
+cell_size = 8;         %For Hog
+req_aspect_ratio = 0.3; % Aspect ratio of the bounding boxes should be greater than
+                        % this value
+%% Where to show the sign?
+size_train_image = 120;
+
+% Placing the traffic sign at the bottom
+%sign_pos_arr = [(1236-size_train_image+1) 1236 1 size_train_image; (1236-size_train_image+1) 1236 (1628-size_train_image+1) 1628];
+
+%Placing it at the top
+sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
 %% Read the Image and get the correct channel for blue
-for i = 35412:35412
+for i = 32686:32856
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
-        im = imread(filename); %719 %686%35412 %33651
+        im = imread(filename); %719 %686%35412 %33651 %33755:33764
     else
         continue;
     end
@@ -57,7 +68,7 @@ for i = 35412:35412
     im_h = im_hsv(:,:,1);
     im_s = im_hsv(:,:,2);
     im_v = im_hsv(:,:,3);
-    im_s_bw = im_s >= 0.35 & im_s <= 0.8; % decreased lower bound from 0.6 to 0.35
+    im_s_bw = im_s >= 0.45 & im_s <= 0.8; % decreased lower bound from 0.6 to 0.35 to 0.45
     im_v_bw = im_v >= 0.35 & im_v <= 1; % Could be done away with
     im_final = M & im_s_bw & im_v_bw;
     %imtool(im_final)
@@ -83,45 +94,70 @@ for i = 35412:35412
    if isempty(allArea)
        continue;
    end
-   [~,ind] = sort(allArea, 'descend'); % Picking the blob with the largest area
-   bbox = S(ind(2)).BoundingBox; % Will have to modify
-   %% Extract the patch corresponding to the Boundng Box
-   % This will be extended for the case where area of two bounding boxes is
-   % comparable
+   [~,ind] = sort(allArea, 'descend'); 
+   iter = min(size(allArea,2), blobs_to_consider);
+   bbox = [];
+   for j = 1:iter
+       if allArea(ind(j)) < min_blob_area
+           break;
+       end
+    curr_bbox = S(ind(j)).BoundingBox;
+    % Get Rid of spurious blue noise and patches
+    if curr_bbox(4) / curr_bbox(3) < req_aspect_ratio
+        continue;
+    else
+        bbox = [bbox;curr_bbox];
+    end
+    %bbox = [bbox;curr_bbox];
+   end
    im_gray = rgb2gray(im);
-   im_roi = imcrop(im_gray, bbox);
-   im_roi = imresize(im_roi, [64,64]);
-   %% Find the sign
-   hog = vl_hog(im2single(im_roi), 4,'variant', 'dalaltriggs') ;
-   testFeatures = hog(:)';
-   [predictedLabel, scores] = predict(classifier, testFeatures);
-   %% Paste the image beside the detected sign
-   if bbox(3) > size(im,2) / 2
-       rect = [(bbox(1)- bbox(3)) bbox(2) bbox(3) bbox(4)]; 
-   else
-       rect = [(bbox(1)+ bbox(3)) bbox(2) bbox(3) bbox(4)];
+   %% Extract the patch corresponding to each Bounding Box
+   iter = size(bbox,1);
+   chosen_bbox = 0;
+   chosen_bbox_arr = [];
+   for j = 1:iter
+       if chosen_bbox == 2
+           break;   % Focus on only two traffic signs max in a single frame
+       end
+       curr_bbox = bbox(j,:);
+       im_roi = imcrop(im_gray, curr_bbox);
+       im_roi = imresize(im_roi, [64,64]);
+       %% Find the sign
+       hog = vl_hog(im2single(im_roi), cell_size,'variant', 'dalaltriggs') ;
+       testFeatures = hog(:)';
+       [predictedLabel, scores] = predict(classifier, testFeatures);
+       if min(abs(scores)) > max_error_score
+           continue;
+       end
+       % HACK for Blue - No red signs be detected in blue sign area
+       [~, min_error_ind] = min(abs(scores));
+       if min_error_ind <= 5
+           continue;
+       end
+       %% Paste the image at appropriate locations in the image
+       chosen_bbox_arr = [chosen_bbox_arr;curr_bbox];
+       label_name = cellstr(predictedLabel);
+       label_folder = cell2mat(fullfile('..\testing\subset_testing', label_name));
+       D = dir([label_folder,'\*.ppm']);
+       fullfilename = fullfile(label_folder,D(1).name);
+       im_train = imread(fullfilename);
+       im_train = imresize(im_train,[size_train_image size_train_image]);
+       rect = sign_pos_arr((chosen_bbox + 1),:);
+       for colorplane = 1 :3
+        im(rect(1):rect(2), rect(3):rect(4), colorplane) = 0.1 * im(rect(1):rect(2), rect(3):rect(4), colorplane) + ...
+            0.9 * im_train(:,:,colorplane);
+       end
+       chosen_bbox = chosen_bbox + 1;
    end
-   label_name = cellstr(predictedLabel);
-   label_folder = cell2mat(fullfile('..\testing\subset_testing', label_name));
-   D = dir([label_folder,'\*.ppm']);
-   fullfilename = fullfile(label_folder,D(1).name);
-   im_train = imread(fullfilename);
-   im_train = imresize(im_train,[64 64]);
-   row_1 = abs(ceil(rect(2)));
-   row_2 = row_1 + 63;
-   col_1 = ceil(rect(1));
-   col_2 = col_1 + 63;%ceil(rect(1) + rect(3));
-   for colorplane = 1 :3
-    im(row_1:row_2, col_1:col_2, colorplane) = 0.3 * im(row_1:row_2, col_1:col_2, colorplane) + ...
-        0.7 * im_train(:,:,colorplane);
-   end
-   %% Plot
+   %% Show the output
    figure(2)
    imshow(im)
    hold on;
-   rectangle('position',bbox,'Edgecolor','g', 'linewidth', 2)
+   for j = 1:size(chosen_bbox_arr,1)
+    rectangle('position',chosen_bbox_arr(j,:),'Edgecolor',[uint8(randi(255)), uint8(randi(255)), uint8(randi(255))], 'linewidth', 2)
+   end
    %% Save the File
-   %filename = sprintf('im_blue_1_ %d.jpg',i);
-   %output_folder = ('bluesignoutputs');
-   %hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+   filename = sprintf('im_blue_1_ %d.jpg',i);
+   output_folder = ('bluesignoutputs');
+   hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end
