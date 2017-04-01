@@ -1,10 +1,16 @@
-% Function to Segment blue coloured traffic signs
+% Function to Segment traffic signs
+%% Define some threshold parameters
+min_blob_area = 600; % for considering any region worthy enough to predict a traffic sign
+max_error_score = 0.05; % for acceptable error margin in prediction
+                        % If > than this value, we have a false positive
+blobs_to_consider = 4; % Consider this much blobs at any given frame
+                       % prediction will be done for all these blobs
 %% Read the Image and get the correct channel for blue
 for i = 35412:35412
     image_name =strcat('image.0',num2str(i), '.jpg');
-    filename = fullfile('bluesign', image_name);
+    filename = fullfile('signs', image_name);
     if exist(filename, 'file')
-        im = imread(filename); %719 %686
+        im = imread(filename); %719 %686%35412 %33651
     else
         continue;
     end
@@ -70,6 +76,7 @@ for i = 35412:35412
    %% Get the Bounding Box from the Region 
    % TODO: Some hacks in a way that could track the bounding box window in 
    % high brightness area - right now it is not tracking it efficiently
+   %On a second thought, it need not be very robust
    label = bwlabel(im_erode);
    S = regionprops(logical(im_erode), 'Area', 'BoundingBox');
    allArea = [S.Area];
@@ -77,7 +84,7 @@ for i = 35412:35412
        continue;
    end
    [~,ind] = sort(allArea, 'descend'); % Picking the blob with the largest area
-   bbox = S(ind(1)).BoundingBox; % Will have to modify
+   bbox = S(ind(2)).BoundingBox; % Will have to modify
    %% Extract the patch corresponding to the Boundng Box
    % This will be extended for the case where area of two bounding boxes is
    % comparable
@@ -87,7 +94,7 @@ for i = 35412:35412
    %% Find the sign
    hog = vl_hog(im2single(im_roi), 4,'variant', 'dalaltriggs') ;
    testFeatures = hog(:)';
-   predictedLabel = predict(classifier, testFeatures);
+   [predictedLabel, scores] = predict(classifier, testFeatures);
    %% Paste the image beside the detected sign
    if bbox(3) > size(im,2) / 2
        rect = [(bbox(1)- bbox(3)) bbox(2) bbox(3) bbox(4)]; 
@@ -114,7 +121,7 @@ for i = 35412:35412
    hold on;
    rectangle('position',bbox,'Edgecolor','g', 'linewidth', 2)
    %% Save the File
-   filename = sprintf('im_blue_1_ %d.jpg',i);
-   output_folder = ('bluesignoutputs');
-   hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+   %filename = sprintf('im_blue_1_ %d.jpg',i);
+   %output_folder = ('bluesignoutputs');
+   %hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end
