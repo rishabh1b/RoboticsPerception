@@ -6,6 +6,24 @@ testingSet = imageDatastore(testingDir,   'IncludeSubfolders', true, 'LabelSourc
 %% confirm each Data set
 %countEachLabel(trainingSet)
 %countEachLabel(testingSet)
+%% Classification using HOG-SVM 
+%imhog = vl_hog('render', hog, 'verbose', 'variant', 'dalaltriggs') ;
+%hog = vl_hog(im2single(img), cellsize);
+%imhog = vl_hog('render', hog, 'verbose') ;
+%clf ; imagesc(imhog) ; colormap gray ;
+hogFeatureSize = 9216;
+numImages = numel(trainingSet.Files);
+trainingFeatures = zeros(numImages, hogFeatureSize, 'single');
+
+for i = 1:numImages
+    img = readimage(trainingSet, i);
+    img = rgb2gray(img);
+    img = medfilt2(img, [3 3]);
+    img = imresize(img, [64 64]);
+    cellsize = 4;
+    hog = vl_hog(im2single(img), cellsize,'variant', 'dalaltriggs') ;
+    trainingFeatures(i, :) = hog(:)';
+end
 
 % Get labels for each image.
 trainingLabels = trainingSet.Labels;
