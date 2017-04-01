@@ -1,14 +1,19 @@
 %% Read images
-for i=35412:35412
+for i=33704:33704 %image.034404
     image_name =strcat('image.0',num2str(i), '.jpg');
-    filename = fullfile('Frames', image_name);
-    I = imread(filename); %719 %686
-
+    filename = fullfile('input', image_name);
+    if exist(filename, 'file')
+        I = imread(filename); %32719 %686 %35412
+   
+    else
+        continue;
+    end
+    imshow(I);
 %     datafolder= sprintf('input');
-%     filename = sprintf('image.03276%d.jpg', i);
+%     filename = sprintf('image.03440%d.jpg', i);
 %     fullfilename = fullfile(datafolder,filename);
 
-    %I= imread(fullfilename);
+%    I= imread(fullfilename);
     im_hsv= rgb2hsv(I);
     im_hue = im_hsv(:,:,1);
     im_sat = im_hsv(:,:,2);
@@ -26,10 +31,12 @@ for i=35412:35412
     
     %Binarize each plane and show the red color image.034404
     h_bin1 = im_hue >= 0.00 & im_hue < 0.02;
-    s_bin1 = im_sat >= 0.65 & im_sat <=0.77;
-    v_bin1 = im_val >= 0.45 & im_val <=0.55 ;
+    s_bin1 = im_sat >= 0.60 & im_sat <=0.77;
+    v_bin1 = im_val >= 0.20 & im_val <=0.65 ;
     red_mask = h_bin1 & s_bin1 & v_bin1;
-    %imshow(red_mask);
+    imshow(red_mask);
+%% Fill the image holes
+
 %% Define shapes   
     blue_stats = regionprops(blue_mask,'Area','Perimeter','Eccentricity','BoundingBox');
     red_stats = regionprops(red_mask,'Area','Perimeter','Eccentricity','BoundingBox');
@@ -63,8 +70,8 @@ for i=35412:35412
         end
     end
 %% Save the images into the temp folder
-    filename = sprintf('image.03365%d.jpg',i);
-    debug_output_folder = sprintf('temp');
+    filename = sprintf(image_name);
+    debug_output_folder = sprintf('temp2');
     hgexport(gcf, fullfile(debug_output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
     
 end
