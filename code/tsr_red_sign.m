@@ -17,7 +17,7 @@ size_train_image = 120;
 %Placing it at the top
 sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
 %% Read the Image and get the correct channel for blue
-for i = 32686:32856
+for i = 33704:33704
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -28,13 +28,17 @@ for i = 32686:32856
     im_d = im2double(im);
     im_c = imadjust(im_d, stretchlim(im_d));
     im_b = im_c(:,:,3);
+    im_g = im_c(:,:,2);
+    im_r = im_c(:,:,1);
+    im_r = medfilt2(im_r, [3 3]); 
+    im_g = medfilt2(im_g, [3 3]); 
     im_b = medfilt2(im_b, [3 3]); 
-    im_b = (im_b - im_c(:,:,1)) ./ (im_c(:,:,1) + im_c(:,:,2) + im_c(:,:,3));
-    im_b_usig = im2uint8(im_b);
-    im_b = im_b_usig;
-    %imtool(im_b)
+    im_r = max(0,min((im_r - im_b), (im_r - im_g)) ./ (im_r + im_g + im_b));
+    im_r_usig = im2uint8(im_r);
+    im_r = im_r_usig;
+    %imtool(im_r)
     %% Crop only a specific region for finding the sign
-    im_roi = im_b(1:500,:); 
+    im_roi = im_r(1:500,:); 
     %% Apply MSER
     %On Original Image
     % [r,f] = vl_mser(im_roi,'MinDiversity',0.7,...
@@ -46,7 +50,7 @@ for i = 32686:32856
                     'MaxVariation',0.2,...
                     'Delta',8, 'DarkOnBright', 0, 'MaxArea', 0.01, 'MinArea', 0.0001 ) ;
     f = vl_ertr(f) ;
-    M = zeros(size(im_b)) ;
+    M = zeros(size(im_r)) ;
     count = 1;
     sAll = [];
     for x=r'
@@ -54,7 +58,7 @@ for i = 32686:32856
      sAll = [sAll;s];
     end
     % Obtain the output in the original size image
-    M_roi = zeros(500, size(im_b,2));
+    M_roi = zeros(500, size(im_r,2));
     M_roi(sAll) = 1;
     M(1:500,:) = M(1:500,:) + M_roi;
     %imtool(M)
@@ -68,13 +72,16 @@ for i = 32686:32856
     im_h = im_hsv(:,:,1);
     im_s = im_hsv(:,:,2);
     im_v = im_hsv(:,:,3);
-    im_s_bw = im_s >= 0.45 & im_s <= 0.8; % decreased lower bound from 0.6 to 0.35 to 0.45
-    im_v_bw = im_v >= 0.35 & im_v <= 1; % Could be done away with
-    im_final = M & im_s_bw & im_v_bw;
+    %h_bin1 = im_h >= 0 & im_h < 0.02;
+    s_bin1 = im_s >= 0.6 & im_s <=0.9;
+    v_bin1 = im_v >= 0.20 & im_v <=0.65 ;
+    red_mask = s_bin1 & v_bin1;
+    imtool(red_mask)
+    im_final = M & red_mask;
     %imtool(im_final)
-    %imtool(im_hsv(:,:,1));
-    %imtool(im_hsv(:,:,2));
-    %imtool(im_hsv(:,:,3));
+    imtool(im_hsv(:,:,1));
+    imtool(im_hsv(:,:,2));
+    imtool(im_hsv(:,:,3));
     %% Morphological Cleaning
     % Approach 2 - Slightly Better, see debug branch for more
     struct_2 = strel('rectangle', [3 3]);
@@ -83,7 +90,7 @@ for i = 32686:32856
     struct = strel('rectangle', [5 5]);  %[2 2]
     im_erode = imerode(im_filtered, struct);
     im_erode = imfill(im_erode, 'holes');
-    %imshow(im_erode)
+    imshow(im_erode)
    %% Get the Bounding Box from the Region 
    % TODO: Some hacks in a way that could track the bounding box window in 
    % high brightness area - right now it is not tracking it efficiently
@@ -130,10 +137,10 @@ for i = 32686:32856
            continue;
        end
        % HACK for Blue - No red signs be detected in blue sign area
-       [~, min_error_ind] = min(abs(scores));
-       if min_error_ind <= 5
-           continue;
-       end
+%        [~, min_error_ind] = min(abs(scores));
+%        if min_error_ind <= 5
+%            continue;
+%        end
        %% Paste the image at appropriate locations in the image
        chosen_bbox_arr = [chosen_bbox_arr;curr_bbox];
        label_name = cellstr(predictedLabel);
