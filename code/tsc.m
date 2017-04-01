@@ -11,7 +11,7 @@ testingSet = imageDatastore(testingDir,   'IncludeSubfolders', true, 'LabelSourc
 %hog = vl_hog(im2single(img), cellsize);
 %imhog = vl_hog('render', hog, 'verbose') ;
 %clf ; imagesc(imhog) ; colormap gray ;
-hogFeatureSize = 9216;
+hogFeatureSize = 2304;%9216;%36864; %Size-8-4-2 respectively
 numImages = numel(trainingSet.Files);
 trainingFeatures = zeros(numImages, hogFeatureSize, 'single');
 
@@ -20,7 +20,7 @@ for i = 1:numImages
     img = rgb2gray(img);
     img = medfilt2(img, [3 3]);
     img = imresize(img, [64 64]);
-    cellsize = 4;
+    cellsize = 8;
     hog = vl_hog(im2single(img), cellsize,'variant', 'dalaltriggs') ;
     trainingFeatures(i, :) = hog(:)';
 end
