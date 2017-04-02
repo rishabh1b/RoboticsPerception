@@ -1,7 +1,7 @@
 % Function to Segment and Identify Red traffic signs
 %% Define some threshold parameters
 min_blob_area = 600; % for considering any region worthy enough to predict a traffic sign
-max_error_score = 0.06; % for acceptable error margin in prediction
+max_error_score = 0.05; % for acceptable error margin in prediction
                         % If > than this value, we have a false positive
 blobs_to_consider = 6; % Consider this much blobs at any given frame
                        % prediction will be done for all these blobs
@@ -21,7 +21,7 @@ sign_pos_arr = [(1236-size_train_image+1) 1236 1 size_train_image; (1236-size_tr
 %Placing it at the top
 %sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
 %% Read the Image and get the correct channel for blue
-for i = 35412:35412
+for i = 32687:33571
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -44,7 +44,7 @@ for i = 35412:35412
     im_final = M & red_mask;
     %imtool(im_final)
     %% Morphological Cleaning
-    im_erode = clean_image(M);
+    im_erode = clean_image(im_final);
     %im_erode = clean_image(M);
 %     figure(3)
 %     imshow(im_erode)
@@ -82,13 +82,13 @@ for i = 35412:35412
    % high brightness area - right now it is not tracking it efficiently
    %On a second thought, it need not be very robust
    bbox_b = get_bboxs(im_erode, blobs_to_consider, min_blob_area, req_aspect_ratio);
-   if isempty(bbox_b)
-       continue;
-   end
    %% Extract the patch corresponding to each Bounding Box
    [chosen_bbox_arr_b, im, pos_train_ind_arr_b] = paste_valid_sign_blue(bbox_b, im, classifier, sign_pos_arr, cell_size, max_error_score, size_train_image, right_pos_taken);
    %%%% Blue Signs End here
    if isempty(chosen_bbox_arr_b) && isempty(chosen_bbox_arr_r)
+       filename = sprintf('im_%d.jpg',i);
+       output_folder = ('signoutputs');
+       imwrite(im, fullfile(output_folder,filename), 'jpg');
        continue;
    end
    %% Show the output
@@ -111,7 +111,7 @@ for i = 35412:35412
     plot([x1 x2], [y1 y2], 'Color', 'green', 'linewidth' , 2, 'linestyle' ,'--')
    end
    %% Save the File
-   filename = sprintf('im_1_ %d.jpg',i);
+   filename = sprintf('im_%d.jpg',i);
    output_folder = ('signoutputs');
    hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end

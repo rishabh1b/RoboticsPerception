@@ -21,7 +21,7 @@ sign_pos_arr = [(1236-size_train_image+1) 1236 1 size_train_image; (1236-size_tr
 %Placing it at the top
 %sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
 %% Read the Image and get the correct channel for blue
-for i = 35412:35412
+for i = 32686:33571
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -76,7 +76,7 @@ for i = 35412:35412
     plot([x1 x2], [y1 y2], 'Color', 'green', 'linewidth' , 2, 'linestyle' ,'--')
    end
    %% Save the File
-   filename = sprintf('im_1_ %d.jpg',i);
+   filename = sprintf('im_%d.jpg',i);
    output_folder = ('signoutputs');
    hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end
