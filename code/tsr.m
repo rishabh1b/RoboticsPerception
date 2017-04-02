@@ -21,7 +21,7 @@ sign_pos_arr = [(1236-size_train_image+1) 1236 1 size_train_image; (1236-size_tr
 %Placing it at the top
 %sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
 %% Read the Image and get the correct channel for blue
-for i = 32687:33571
+for i = 32686:33335
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -46,8 +46,6 @@ for i = 32687:33571
     %% Morphological Cleaning
     im_erode = clean_image(im_final);
     %im_erode = clean_image(M);
-%     figure(3)
-%     imshow(im_erode)
    %% Get the Bounding Box from the Region 
    % TODO: Some way that could track the bounding box window in 
    % high brightness area - right now it is not tracking it efficiently
@@ -88,7 +86,9 @@ for i = 32687:33571
    if isempty(chosen_bbox_arr_b) && isempty(chosen_bbox_arr_r)
        filename = sprintf('im_%d.jpg',i);
        output_folder = ('signoutputs');
-       imwrite(im, fullfile(output_folder,filename), 'jpg');
+       figure(2)
+       imshow(im)
+       hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
        continue;
    end
    %% Show the output
