@@ -1,20 +1,21 @@
-% Complete Script based on hough lines to plot the lane and create a video
-%% Get a Test Image and denoise
+function lane_detection()
+% Script for finding lanes based on hough lines.
+% Function plots the lane and creates a video
 for i = 1:800
     curr_file = fullfile('..\..\Data\normal\', sprintf('Frame %d.jpg', i));
     im = imread(curr_file);
     im_r = im(:,:,1);
     im_g = im(:,:,2);
     im_b = im(:,:,3);
-    im_gray = rgb2gray(im);
-    im_denoise_gray = medfilt2(im_gray, [5 5]);
+    %im_gray = rgb2gray(im);
+    %im_denoise_gray = medfilt2(im_gray, [5 5]);
     %% Get the Region of interest through observation
     x=[539 680 1256 89];
     y=[419 417 708 716];
     m= 720; n=1280;
 
     mask = poly2mask(x, y, m, n);
-    mask_img=im2double(im_denoise_gray).*mask;
+    %mask_img=im2double(im_denoise_gray).*mask;
     imdouble= im2double(im);
     inew = imdouble.*repmat(mask,[1,1,3]); % Neat way of applying mask on each channel
     %% Convert to HSV space
@@ -32,9 +33,8 @@ for i = 1:800
     s_bin_2 = im_sat >= 0.01 & im_sat <= 0.15;
     v_bin_2 = im_val >= 0.8 & im_val < 1;
     white_lane_mask = h_bin_2 & s_bin_2 & v_bin_2;
-    %imtool(white_lane_mask)
     %% Combine to obtain both the planes
-    im_lane = yellow_lane_mask + white_lane_mask;
+    %im_lane = yellow_lane_mask + white_lane_mask; % For showinng purpose only
     %%%%%% End of Lane Masking
     %% Morphological Operation and Canny
     % Erosion is causing white lanes to disapper. Even with small structuring
@@ -56,6 +56,11 @@ for i = 1:800
     [sorted_p1_y, ind] = sort(points(:,2));
     p1 = [points(ind(1),1),points(ind(end),1)];
     p2 = [sorted_p1_y(1),sorted_p1_y(end)];
+    yellow_lane_direction = cross([p1(1), p2(1), 1], [p1(2), p2(2), 1]);
+    yellow_lane_direction = yellow_lane_direction ./ sqrt(yellow_lane_direction(1)^2 + yellow_lane_direction(2)^2);
+    theta_yellow = atan2(yellow_lane_direction(2), yellow_lane_direction(1));
+    rho_yellow = yellow_lane_direction(3);
+    l_y = [cos(theta_yellow), sin(theta_yellow), rho_yellow];
     %% Apply Hough Transform for right lane(white) and extract a candidate for line
     [H_r,theta_r,rho_r] = hough(canny_2);
     P_r = houghpeaks(H_r,15,'threshold',ceil(0.2*max(H_r(:)))); %0.2
@@ -92,6 +97,17 @@ for i = 1:800
     l3 = [0, 1, -p2(2)];
     point_on_white_lane_2 = cross(l3,l2);
     point_on_white_lane_2 = point_on_white_lane_2 ./ point_on_white_lane_2(3);
+    %% Find the Vanishing Point
+    van_point = cross(l_y, l2);
+    van_point = van_point ./ van_point(3);
+    van_point_ratio = van_point(1) / size(im,2);
+    if van_point_ratio > 0.47 && van_point_ratio < 0.485
+        lane_direction = 'Left Curve Ahead';
+    elseif van_point_ratio >= 0.485 && van_point_ratio <= 0.51
+        lane_direction = 'Straight Road Ahead';
+    else
+        lane_direction = 'Right Curve Ahead';
+    end
     %% Insert a Transparent green-coloured lane screen
     x = [p1(1) point_on_white_lane(1) point_on_white_lane_2(1) p1(2)];
     y = [p2(1) point_on_white_lane(2) point_on_white_lane_2(2) p2(2)];
@@ -112,7 +128,9 @@ for i = 1:800
     imshow(im_mod), hold on
     plot(p1,p2,'LineWidth',4,'Color','green');
     plot([point_on_white_lane(1),point_on_white_lane_2(1)],[point_on_white_lane(2), point_on_white_lane_2(2)],'LineWidth',4,'Color','green');
-    hold off
+    %% Show the Vanishing Point
+    plot(van_point(1), van_point(2), '.','Color','yellow', 'markersize', 10)
+    text(180, 75, lane_direction,'horizontalAlignment', 'center', 'Color','red','FontSize',18)
     %% Save the File
     filename = sprintf('im_lane %d.jpg',i);
     output_folder = ('outputs');
@@ -120,3 +138,4 @@ for i = 1:800
 end
 %% Create a Video
 CreateVideo(output_folder, 'lane_detection.mp4');
+end
