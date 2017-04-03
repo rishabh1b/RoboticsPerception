@@ -1,6 +1,6 @@
 % Function to Segment and Identify Blue Colured traffic signs
-% This is eesentially unwrapped version of the final version which is based
-% of scripts. Use this for debugging and testing
+% This is essentially unwrapped version(script version) of the final version 
+% Use this for debugging and testing
 %% Define some threshold parameters
 min_blob_area = 600; % for considering any region worthy enough to predict a traffic sign
 max_error_score = 0.06; % for acceptable error margin in prediction
@@ -10,7 +10,7 @@ blobs_to_consider = 4; % Consider this much blobs at any given frame
 cell_size = 8;         %For Hog
 req_aspect_ratio = 0.3; % Aspect ratio of the bounding boxes should be greater than
                         % this value
-%% Where to show the sign?
+%% Where to show the identified sign?
 size_train_image = 120;
 
 % Placing the traffic sign at the bottom
@@ -18,8 +18,11 @@ size_train_image = 120;
 
 %Placing it at the top
 sign_pos_arr = [1 size_train_image (1628-size_train_image+1) 1628;1 size_train_image 1 size_train_image];
+%% Image Data
+im_data = cell(20,1);
+count = 1;
 %% Read the Image and get the correct channel for blue
-for i = 35412:35412
+for i = 32719:32719
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -152,14 +155,19 @@ for i = 35412:35412
        chosen_bbox = chosen_bbox + 1;
    end
    %% Show the output
-   figure(2)
+   figure('Visible', 'On')
    imshow(im)
    hold on;
    for j = 1:size(chosen_bbox_arr,1)
     rectangle('position',chosen_bbox_arr(j,:),'Edgecolor',[uint8(randi(255)), uint8(randi(255)), uint8(randi(255))], 'linewidth', 2)
    end
+   cdata = print('-RGBImage');
+   im_data{count} = cdata;
+   count = count + 1;
+%    figure(3)
+%    imshow(cdata)
    %% Save the File
-   filename = sprintf('im_blue_1_ %d.jpg',i);
-   output_folder = ('bluesignoutputs');
-   hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+%    filename = sprintf('im_blue_1_ %d.jpg',i);
+%    output_folder = ('bluesignoutputs');
+%    hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end

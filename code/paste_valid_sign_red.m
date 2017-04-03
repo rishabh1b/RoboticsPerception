@@ -27,7 +27,7 @@ for j = 1:iter
    %% Paste the image at appropriate locations in the image
    chosen_bbox_arr = [chosen_bbox_arr;curr_bbox];
    label_name = cellstr(predictedLabel);
-   label_folder = cell2mat(fullfile('..\testing\subset_testing', label_name));
+   label_folder = cell2mat(fullfile('..\training\subset_training', label_name));
    D = dir([label_folder,'\*.ppm']);
    fullfilename = fullfile(label_folder,D(1).name);
    im_train = imread(fullfilename);
