@@ -1,6 +1,6 @@
 % This will test the robustness of the mask across each frame.
 % Current approach will focus on the use of Hough Lines directly on the 
-% image provided. That is let's skip homography for now
+% image provided. That is let's skip homography
 %% Get a Test Image and denoise
 for i = 1:100
     curr_file = fullfile('..\..\Data\normal\', sprintf('Frame %d.jpg', i));
@@ -120,7 +120,7 @@ for i = 1:100
     white_lane_direction = white_lane_direction ./(sqrt(white_lane_direction(1)^2 + white_lane_direction(2)^2));
     theta_mean = atan2(white_lane_direction(2), white_lane_direction(1));
     rhos_r_mean = white_lane_direction(3);
-    %plot(p1_r,p2_r,'LineWidth',4,'Color','green');
+    plot(p1_r,p2_r,'LineWidth',4,'Color','green');
     % Plot beginnings and ends of lines
     %plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
     %plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','green');
@@ -160,9 +160,9 @@ for i = 1:100
     %plot(p1_r,p2_r,'LineWidth',4,'Color','green');
     hold off
     %% Save the File
-    filename = sprintf('im_lane %d.jpg',i);
-    output_folder = ('outputs');
-    hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
+%     filename = sprintf('im_lane %d.jpg',i);
+%     output_folder = ('outputs');
+%     hgexport(gcf, fullfile(output_folder, filename), hgexport('factorystyle'), 'Format', 'jpeg');
 end
 %%% Following approach relied on Sobel - Not being used anymore
 %% Edge Detection
