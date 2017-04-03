@@ -1,4 +1,7 @@
 function blue_mask = threshold_blue(im)
+% Function to threshold an input image for blue coloured traffic signs in
+% HSV space
+% Output - blue_mask -> BW image obtained after thresholding
 im_hsv = rgb2hsv(im);
 im_s = im_hsv(:,:,2);
 im_v = im_hsv(:,:,3);

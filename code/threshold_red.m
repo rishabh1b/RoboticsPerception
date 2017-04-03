@@ -1,4 +1,7 @@
 function red_mask = threshold_red(im)
+% Function to threshold an input image for Red coloured traffic signs in
+% HSV space
+% Output - red_mask -> BW image obtained after thresholding
 im_hsv = rgb2hsv(im);
 im_s = im_hsv(:,:,2);
 im_v = im_hsv(:,:,3);

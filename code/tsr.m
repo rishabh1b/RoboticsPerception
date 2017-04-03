@@ -1,4 +1,6 @@
+function tsr()
 % Function to Segment and Identify traffic signs
+% The implementation needs vl_feat toolbox.
 %% Define some threshold parameters
 min_blob_area = 600; % for considering any region worthy enough to predict a traffic sign
 max_error_score = 0.05; % for acceptable error margin in prediction
@@ -28,11 +30,13 @@ sign_pos_arr = [(cent-size_train_image+1) cent 1 size_train_image; (cent-size_tr
 outputfolder = '.';
 filename = 'tsr.mp4';
 outputVideo = VideoWriter(fullfile(outputfolder,filename),'MPEG-4');
-outputVideo.FrameRate = 25;
+outputVideo.FrameRate = 20;
 open(outputVideo);
 fig = figure();
+%% Get the Classifier
+classifier = tsc();
 %% Read the Image and get the correct channel for blue
-for i = 33411:33544
+for i = 34824:34850
     image_name =strcat('image.0',num2str(i), '.jpg');
     filename = fullfile('signs', image_name);
     if exist(filename, 'file')
@@ -86,8 +90,6 @@ for i = 33411:33544
    [chosen_bbox_arr_b, im, pos_train_ind_arr_b] = paste_valid_sign_blue(bbox_b, im, classifier, sign_pos_arr, cell_size, max_error_score, size_train_image, right_pos_taken);
    %%%% Blue Signs End here
    if isempty(chosen_bbox_arr_b) && isempty(chosen_bbox_arr_r)
-       filename = sprintf('im_%d.jpg',i);
-       output_folder = ('signoutputs');
        figure('Visible', 'Off', 'PaperPositionMode', 'auto')
        imshow(im)
        im_data = print('-RGBImage');
@@ -124,3 +126,4 @@ for i = 33411:33544
 end
 close(fig)
 close(outputVideo)
+end

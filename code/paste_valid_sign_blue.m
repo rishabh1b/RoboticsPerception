@@ -1,4 +1,24 @@
 function [chosen_bbox_arr, im, pos_train_ind_arr] = paste_valid_sign_blue(bbox, im, classifier, sign_pos_arr, cell_size, max_error_score, size_train_image, right_pos_taken)
+% Function to remove false postives in traffic sign recognition by querying
+% the classifier
+% Input -> bbox - a n x 4 array of dimension of bounding box
+%          im - Original Image
+%          classifier - classifer obtained from multi-class SVM training
+%          sign_pos_arr - 2 x 4 array describing position where to paste
+%          the detected sign
+%          cell_size - cell size for HOG features
+%          max_error_score - max permissible error for positive sign
+%          detection
+%          size_train_image - size of the training image to be used for
+%          pasting
+%          right_pos_taken - A boolean indicating whether right position
+%          has already been taken by some other traffic sign identification
+%Output -> chosen_bbox_arr - A 1 x 4 or empty array giving the dimensions
+%           of bounding box
+%         im - Original Image returned after pasting the identified
+%               traffic sign
+%         pos_train_ind_arr - An array indicating the psosition of pasted
+%         sign
 iter = size(bbox,1);
 chosen_bbox = 0;
 chosen_bbox_arr = [];

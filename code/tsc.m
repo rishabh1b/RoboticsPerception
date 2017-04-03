@@ -1,4 +1,6 @@
 function classifier = tsc()
+% function to get the classifier data after suitable training.
+% it assumes a cell_size of 8 for HOG features.
 %% Get the image data stores
 trainingDir = '..\training\subset_training';
 %testingDir = '..\testing\subset_testing'; 

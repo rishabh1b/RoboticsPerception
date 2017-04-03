@@ -1,4 +1,9 @@
 function im_r_usig = preprocess_red(im)
+% Function to denoise, improve contrast and normalize it suitably for red
+% sign identification
+% Input -> im -> RGB uint8 image
+% Output -> im_b_usig -> processed grayscale image for the Red channel of
+%          the type uint8
 im_d = im2double(im);
 im_c = imadjust(im_d, stretchlim(im_d));
 im_b = im_c(:,:,3);
