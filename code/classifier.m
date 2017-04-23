@@ -1,20 +1,17 @@
-%% https://www.mathworks.com/matlabcentral/answers/uploaded_files/23754/recurse_subfolders.m
+%% Get the training positive data and negative image data
 datafolder = '..\input\Dataset';
-
 positive = sprintf('vehicles');
-negative= sprintf('non-vehicles');
+negative= 'non-vehicles/all';
 
 %define positive images
 positiveFolder= fullfile(datafolder,positive);
-%allpositiveFolders = genpath(positiveFolder);
 positiveImages = imageDatastore(positiveFolder);
 
 %define negative images
 negativeFolder= fullfile(datafolder,negative);
-%allnegativeFolders = genpath(negativeFolder);
-negativeImages = imageDatastore(negativeFolder);
-
-%TODO: Will have to modify positiveImages to a mat file(struct/char)
-%train images
-trainCascadeObjectDetector('CarDetector.xml',positiveImages,negativeImages,...
+%negativeImages = imageDatastore(negativeFolder,'IncludeSubfolders', true);
+% imageDataStore will not work in 2016a, will need cell or string
+positive_instances = getPositiveInstances(positiveFolder);
+%% Run the classifier
+trainCascadeObjectDetector('CarDetector.xml',positive_instances,negativeFolder,...
     'FalseAlarmRate',0.1,'NumCascadeStages',5)
