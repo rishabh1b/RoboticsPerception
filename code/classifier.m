@@ -14,4 +14,4 @@ negativeFolder= fullfile(datafolder,negative);
 positive_instances = getPositiveInstances(positiveFolder);
 %% Run the classifier
 trainCascadeObjectDetector('CarDetector.xml',positive_instances,negativeFolder,...
-    'FalseAlarmRate',0.1,'NumCascadeStages',5)
+    'FalseAlarmRate',0.01,'NumCascadeStages',4);

@@ -9,7 +9,7 @@ listOfFolderNames = textscan( allSubFolders, '%s', 'delimiter', ';' );
 bbox = [1 1 64 64];
 positive_instances = [];
 % Process all image files in each of the folders.
-for k = 2 : numberOfFolders
+for k = 3 :3%:4
 	thisfolder = listOfFolderNames{1}{k};
 	fprintf('Processing folder %s\n', thisfolder);
 	filePattern = sprintf('%s/*.png', thisfolder);
