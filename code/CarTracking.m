@@ -43,7 +43,7 @@ curr_color = zeros(size(bbox,1),3);
 curr_num = zeros(size(bbox,1),1);
 
 for i = 1: size(bbox,1)
-    curr_color(i,:) = (rand(3,1))';
+    curr_color(i,:) = randi(255,1,3);%(rand(3,1))';
     curr_num(i) = car_count;
     car_count = car_count + 1;
 end
@@ -66,9 +66,13 @@ numberOfImageFiles = length(baseFileNames);
 curr_file_names = {baseFileNames.name};
 prev_img = first_img;
 for i=2:2
-    curr_file_name = fullfile(inpFramesPath,cell2mat(curr_file_names(i)));
+    %curr_file_name = fullfile(inpFramesPath,cell2mat(curr_file_names(i)));
+    curr_file_name = sprintf('Frame %d.jpg', i);
+    curr_file_name = fullfile(inpFramesPath, curr_file_name);
     next_img = imread(curr_file_name);
-    %if(floor(i / N) * N - i == 0)
+    if(floor(i / N) * N - i == 0)
+        %Run the detector again and check whether we should add new bboxes
+    end
     for j = 1:size(prev_bbox.bbox,1)
         prev_box = prev_bbox.bbox(j,:);
         area_1 = prev_box(1,3) * prev_box(1,4);
@@ -91,17 +95,20 @@ for i=2:2
         end 
         pointTracker.release();
     end
-    figure
-    imshow(next_img)
-    hold on
+    RGB = next_img;
     for k = 1 : size(curr_bbox.bbox,1)
         thisBB = curr_bbox.bbox(k,:);
         if thisBB(1) == 0 && thisBB(2) == 0
             continue;
         end
-        rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
-        'EdgeColor',curr_bbox.color(k,:),'LineWidth',2 )
+        RGB = insertShape(RGB, 'Rectangle', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+             'Color',curr_bbox.color(k,:),'LineWidth', 2);
+        %rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
+        %'EdgeColor',curr_bbox.color(k,:),'LineWidth',2 )
     end
+    figure
+    imshow(RGB)
+    
     prev_img = next_img;
     prev_bbox = curr_bbox;
 end
