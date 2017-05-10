@@ -1,3 +1,4 @@
+%%%%%%%%%%Script not used in the final Implementation%%%%%%%%%%%
 %% Test the trained classifier on the given video sequence
 %TODO: test for 20-30 frames
 %Detection is time consuming
