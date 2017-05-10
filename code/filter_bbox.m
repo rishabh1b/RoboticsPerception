@@ -16,8 +16,9 @@ for i = 1 :size(bbox_1,1)
         area_2 = bbox_2(j,3) * bbox_2(j,4);
         cent_2 = [bbox_2(j,1) + bbox_2(j,3) / 2, bbox_2(j,2) + bbox_2(j,4) / 2];
         if hypot((cent_2(1) - cent_1(1)), (cent_2(2) - cent_1(2))) < bbox_dist_thresh && ...
-             (area_1 / area_2) > min_bbox_ratio && (area_1 / area_2) < max_bbox_ratio
+             (area_1 / area_2) > min_bbox_ratio && (area_1 / area_2) < max_bbox_ratio 
          bbox = [bbox; bbox_1(i,:)];
+         break;
         end
     end
 end       

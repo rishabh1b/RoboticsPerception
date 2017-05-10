@@ -7,15 +7,21 @@ global max_area_bbox;
 global min_area_bbox;
 global bbox_exist;
 global car_count;
+global overlap_thresh;
+global aspect_ratio_thresh;
+
 bbox_dist_thresh = 10;
 min_bbox_ratio = 0.7;
 max_bbox_ratio = 1.3;
 max_area_bbox = 100 * 100;
 min_area_bbox = 30 * 30;
-bbox_exist = 5;
+bbox_exist = 10;
 car_count = 1;
-
-roi_row = 300;
+overlap_thresh = 0.2;
+aspect_ratio_thresh = 0.9;
+% Define Region of Interest to minimize false positives
+roi_row = 250; %300
+roi_col = 50;
 %% Initialize the bbox structs
 field_1 = 'bbox';
 field_2 = 'color';
@@ -25,13 +31,18 @@ prev_bbox = struct(field_1, value_1, field_2, value_1, field_3, value_1);
 curr_bbox = struct(field_1, value_1, field_2, value_1, field_3, value_1);
 %% Detection Init
 inpFramesPath = '..\input\simple';
-second_frame = 'Frame 2.jpg';
-first_frame = 'Frame 1.jpg';
+outputFramesPath = '..\output\simple\frames';
+second_frame = 'Frame 1.jpg';
+first_frame = 'Frame 2.jpg';
 second_file = fullfile(inpFramesPath, second_frame);
 first_file = fullfile(inpFramesPath, first_frame);
 first_img = imread(first_file);
 second_img = imread(second_file);
-roi = [1,roi_row,size(first_img,2),size(first_img,1)-roi_row];
+x = roi_col;
+y = roi_row;
+width = size(first_img,2) - 2*roi_col;
+height = size(first_img,1)-roi_row;
+roi = [x,y,width,height];
 
 detector = vision.CascadeObjectDetector('CarDetector_0.01.xml');
 detector.UseROI = true;
@@ -52,10 +63,13 @@ prev_bbox.bbox = bbox;
 prev_bbox.color = curr_color;
 prev_bbox.num = curr_num;
 
-%% Testing
-detectedImg = insertObjectAnnotation(first_img,'rectangle',bbox,'Car 1');
-figure;
-imshow(detectedImg)
+%% Detection Testing
+% detectedImg = insertObjectAnnotation(first_img,'rectangle',bbox,'Car 1');
+% figure(2);
+% imshow(detectedImg)
+% hold on
+% rectangle('Position', roi,...
+%         'EdgeColor','black','LineWidth',2 )
 %% Initialize the tracker
 pointTracker = vision.PointTracker;
 %% Looping over rest of the frames - 
@@ -63,20 +77,24 @@ fprintf('Processing folder %s\n', inpFramesPath);
 filePattern = sprintf('%s/*.jpg', inpFramesPath);
 baseFileNames = dir(filePattern);
 numberOfImageFiles = length(baseFileNames);
-curr_file_names = {baseFileNames.name};
+%curr_file_names = {baseFileNames.name};
 prev_img = first_img;
-for i=2:2
-    %curr_file_name = fullfile(inpFramesPath,cell2mat(curr_file_names(i)));
+for i=2:300
     curr_file_name = sprintf('Frame %d.jpg', i);
-    curr_file_name = fullfile(inpFramesPath, curr_file_name);
-    next_img = imread(curr_file_name);
+    curr_full_file_name = fullfile(inpFramesPath, curr_file_name);
+    next_img = imread(curr_full_file_name);
     if(floor(i / N) * N - i == 0)
         %Run the detector again and check whether we should add new bboxes
+        bbox_1 = step(detector,prev_img,roi);
+        bbox_2 = step(detector,next_img,roi);
+        bbox = filter_bbox(bbox_1, bbox_2);
+        prev_bbox = check_for_new_detection(bbox, prev_bbox);
     end
+    % Reinitialize the curr_bbox
+    %curr_bbox = struct(field_1, value_1, field_2, value_1, field_3, value_1);
     for j = 1:size(prev_bbox.bbox,1)
         prev_box = prev_bbox.bbox(j,:);
         area_1 = prev_box(1,3) * prev_box(1,4);
-        %im_temp = rgb2gray(imcrop(prev_img,prev_box));
         points_old = detectFASTFeatures(rgb2gray(prev_img), 'ROI', prev_box);
         initialize(pointTracker,points_old.Location,prev_img);
         [points_new,~] = step(pointTracker,next_img);
@@ -87,8 +105,10 @@ for i=2:2
         area_2 = X(1,3) * X(1,4);
         cent_old = get_centroid(prev_box);
         cent_new = get_centroid(X);
+        asp_ratio = X(3) / X(4);
         if hypot((cent_new(1) - cent_old(1)),(cent_new(2) - cent_old(2))) < bbox_dist_thresh &&...
-                (area_1 / area_2) > min_bbox_ratio && (area_1 / area_2) < max_bbox_ratio
+                (area_1 / area_2) > min_bbox_ratio && (area_1 / area_2) < max_bbox_ratio &&...
+                asp_ratio > aspect_ratio_thresh
             curr_bbox.bbox(j,:) = X;
             curr_bbox.color(j,:) = prev_bbox.color(j,:);
             curr_bbox.num(j) = prev_bbox.num(j);
@@ -103,12 +123,14 @@ for i=2:2
         end
         RGB = insertShape(RGB, 'Rectangle', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
              'Color',curr_bbox.color(k,:),'LineWidth', 2);
-        %rectangle('Position', [thisBB(1),thisBB(2),thisBB(3),thisBB(4)],...
-        %'EdgeColor',curr_bbox.color(k,:),'LineWidth',2 )
+        text_str = strcat('Car_',num2str(curr_bbox.num(k)));
+        RGB = insertText(RGB,thisBB(1:2),text_str,'FontSize',12,'BoxColor',...
+            curr_bbox.color(k,:),'BoxOpacity',0.6,'TextColor','black', 'AnchorPoint','LeftBottom');
     end
-    figure
+    figure(1)
     imshow(RGB)
-    
+    outputFileName = fullfile(outputFramesPath,curr_file_name);
+    imwrite(RGB,outputFileName);
     prev_img = next_img;
     prev_bbox = curr_bbox;
 end
