@@ -47,6 +47,15 @@ if (size(ind,1) > 0)
         R(2,1) = 0;
         R(2,3) = 0;
         R(3,2) = 0;
+        
+        %%%%% Hack For now - 
+        if abs(R(1,3)) < 0.001
+            R(1,3) = 0;
+        end
+        if abs(R(3,1)) < 0.001
+            R(3,1) = 0;
+        end  
+        
         % Filter four -> Limit the sideways movement
         if abs(t(1)) < 0 || R(1,1) > 0.99 % This implies the rotation is almost zero degrees
             t = [0;0;t(3)];

@@ -29,7 +29,8 @@ pointsPrev = detectSURFFeatures(gray_prev_img);
 %title('Subset of the detected features');
 % Trial Plotting
 loc_arr = [0,0];
-for i = 2:50
+for i = 2:numberOfImageFiles
+    i
     curr_file_name = fullfile(image_dir,cell2mat(curr_file_names(i)));
     curr_img = imread(curr_file_name);
     rgb_curr_img = demosaic(curr_img,'gbrg');
@@ -41,8 +42,8 @@ for i = 2:50
     indexPairs = matchFeatures(featuresPrev,featuresCurr) ;
     matchedPoints1 = pointsPrev(indexPairs(:,1),:);
     matchedPoints2 = pointsCurr(indexPairs(:,2),:);
-    figure(1); showMatchedFeatures(rgb_prev_img,rgb_curr_img,matchedPoints1,matchedPoints2);
-    legend('Image 1', 'Image 2')
+    %figure(1); showMatchedFeatures(rgb_prev_img,rgb_curr_img,matchedPoints1,matchedPoints2);
+    %legend('Image 1', 'Image 2')
     %% Compute the Fundamental Matrix using RANSAC
     F = computeFundamentalMatrixRANSAC(matchedPoints1, matchedPoints2);
     %% Get the Pose from Fundamental Matrix
@@ -64,4 +65,4 @@ for i = 2:50
 end
 %% Show the Trajectory
 figure(2)
-plot(loc_arr(:,1), loc_arr(:,2))
+plot(-loc_arr(:,1), loc_arr(:,2))
