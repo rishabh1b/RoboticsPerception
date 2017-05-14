@@ -3,7 +3,7 @@ image_dir = '..\input\Oxford_dataset\stereo\centre';
 [fx, fy, cx, cy, ~, LUT] = ReadCameraModel(image_dir,'..\input\Oxford_dataset\model');
 K = [fx 0 cx;0 fy cy; 0 0 1];
 %% Init Pose
-R_t = [1 0 0; 0 1 0; 0 0 1];
+R_t = eye(3);
 t_t = [0;0;0];
 %% Set the paths
 filePattern = sprintf('%s/*.png', image_dir);
@@ -55,7 +55,7 @@ vSet = addView(vSet, viewId, 'Points', pointsPrev, 'Orientation', eye(3),...
 %title('Subset of the detected features');
 % Trial Plotting
 loc_arr = [0,0,0];
-for i = 2:100
+for i = 1:50
     curr_file_name = fullfile(image_dir,cell2mat(curr_file_names(i)));
     curr_img = imread(curr_file_name);
     rgb_curr_img = demosaic(curr_img,'gbrg');
@@ -67,32 +67,33 @@ for i = 2:100
     indexPairs = matchFeatures(featuresPrev,featuresCurr) ;
     matchedPoints1 = pointsPrev(indexPairs(:,1),:);
     matchedPoints2 = pointsCurr(indexPairs(:,2),:);
-    %figure(1); showMatchedFeatures(rgb_prev_img,rgb_curr_img,matchedPoints1,matchedPoints2);
-    %legend('Image 1', 'Image 2')
+    figure(1); showMatchedFeatures(rgb_prev_img,rgb_curr_img,matchedPoints1,matchedPoints2);
+    legend('Image 1', 'Image 2')
     %% Compute the Fundamental Matrix using RANSAC
     F = computeFundamentalMatrixRANSAC(matchedPoints1, matchedPoints2);
     %% Get the Pose from Fundamental Matrix
-    [relativeOrient, relativeLoc] = PoseFromFundamentalMatrix(F,K);
-    %t_t = t_t + R_t * t;
-    %R_t = R_t * R;
+    [Rset, Cset] = PoseFromFundamentalMatrix(F,K);
+    [R, t] = disambiguateChoices(Cset, Rset, R_t);
+    t_t = t_t + R_t * t;
+    R_t = R_t * R;
     %% Add the camera poses to the vset
     % Add the current view to the view set.
-    vSet = addView(vSet, i, 'Points', pointsCurr);
+    %vSet = addView(vSet, i, 'Points', pointsCurr);
     % Store the point matches between the previous and the current views.
     %vSet = addConnection(vSet, i-1, i, 'Matches', indexPairs(inlierIdx,:));
-    vSet = addConnection(vSet, i-1, i);
+    %vSet = addConnection(vSet, i-1, i);
      % Get the table containing the previous camera pose.
-    prevPose = poses(vSet, i-1);
-    prevOrientation = prevPose.Orientation{1};
-    prevLocation    = prevPose.Location{1};
+    %prevPose = poses(vSet, i-1);
+    %prevOrientation = prevPose.Orientation{1};
+    %prevLocation    = prevPose.Location{1};
 
     % Compute the current camera pose in the global coordinate system
     % relative to the first view.
-    orientation = prevOrientation * relativeOrient;
-    location    = prevLocation + relativeLoc' * prevOrientation;
-    vSet = updateView(vSet, i, 'Orientation', orientation, ...
-        'Location', location);
-    loc_arr = [loc_arr;location(1),location(2),location(3)];
+    %orientation = prevOrientation * relativeOrient;
+    %location    = prevLocation + relativeLoc' * prevOrientation;
+    %vSet = updateView(vSet, i, 'Orientation', orientation, ...
+    %    'Location', location);
+    loc_arr = [loc_arr;t_t(1),t_t(2),t_t(3)];
     %% Change for next iteration
     featuresPrev = featuresCurr;
     pointsPrev = pointsCurr;
