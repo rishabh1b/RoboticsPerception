@@ -24,7 +24,7 @@ while n < N
     n = n + 1;
 end
 %Compute fundamental matrix using best fundamental matrix
-% x1 = matchedpoints1(chosen_pt_ind);
-% x2 = matchedpoints2(chosen_pt_ind);
-% F = EstimateFundamentalMatrix(x1.Location, x2.Location);
+x1 = matchedpoints1(chosen_pt_ind);
+x2 = matchedpoints2(chosen_pt_ind);
+F = EstimateFundamentalMatrix(x1.Location, x2.Location);
 end

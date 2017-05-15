@@ -6,7 +6,6 @@ ind = [];
 % Filter One - Local Z should always be positive - with the assumption that
 % car is always moving forward
 for i = 1: length(Cset)
-    selected_trans_debug = Cset{i};
     if (Cset{i}(3,1) > 0)
         ind = [ind;i];
         %new_cset{j} = C;
@@ -31,7 +30,6 @@ if (size(ind,1) > 0)
     % Filter three - pick the matrix with minimum y translation
     if (size(ind_2,1) > 0)
         R = new_Rset{1};
-        selected_trans_debug = Cset{ind_2(1)};
         t = [Cset{ind_2(1)}(1);0;Cset{ind_2(1)}(3)];
         min_y = abs(Cset{ind_2(1)}(2));
         for i = 2: size(ind_2,1)
@@ -48,7 +46,7 @@ if (size(ind,1) > 0)
         R(2,3) = 0;
         R(3,2) = 0;
         
-        %%%%% Hack For now - 
+        %%%%% Reject the Noises- 
         if abs(R(1,3)) < 0.001
             R(1,3) = 0;
         end
